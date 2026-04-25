@@ -4,6 +4,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
 
 import com.tcpip147.jdirect.ffm.Struct;
@@ -22,6 +23,10 @@ public class D2D1_SIZE_U extends Struct {
 	public D2D1_SIZE_U(Arena arena) {
 		super(arena);
 	}
+	
+	public D2D1_SIZE_U(MemorySegment ref) {
+		super(ref);
+	}
 
 	@Override
 	protected MemoryLayout getLayout() {
@@ -32,15 +37,15 @@ public class D2D1_SIZE_U extends Struct {
 		return (int) WIDTH.get(ref, 0);
 	}
 	
-	public void setWidth(int width) {
-		WIDTH.set(ref, 0, width);
+	public void setWidth(int value) {
+		WIDTH.set(ref, 0, value);
 	}
 	
 	public int getHeight() {
 		return (int) HEIGHT.get(ref, 0);
 	}
 	
-	public void setHeight(int height) {
-		HEIGHT.set(ref, 0, height);
+	public void setHeight(int value) {
+		HEIGHT.set(ref, 0, value);
 	}
 }

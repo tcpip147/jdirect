@@ -1,81 +1,94 @@
 package com.tcpip147.jdirect;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
-
-import com.tcpip147.jdirect.ffm.NativeUtils;
-import com.tcpip147.jdirect.ffm.coms.ID2D1Factory;
-import com.tcpip147.jdirect.ffm.dll.D2d1;
-import com.tcpip147.jdirect.ffm.dll.User32;
-import com.tcpip147.jdirect.ffm.enums.D2D1_FACTORY_TYPE;
-import com.tcpip147.jdirect.ffm.structs.D2D1_PIXEL_FORMAT;
-import com.tcpip147.jdirect.ffm.structs.D2D1_RENDER_TARGET_PROPERTIES;
-import com.tcpip147.jdirect.ffm.structs.D2D1_SIZE_U;
-import com.tcpip147.jdirect.ffm.structs.LPRECT;
 
 public class SwtOnWindows {
 
 	public static void main(String[] args) {
-
-		// 1. OS와의 연결을 담당하는 Display 생성
 		Display display = new Display();
 
-		// 2. 창(Window) 역할을 하는 Shell 생성
 		Shell shell = new Shell(display);
-		shell.setText("SWT 2026 Example");
+		shell.setText("SwtOnWindows");
 		shell.setSize(800, 600);
-		shell.setLayout(new FillLayout(SWT.VERTICAL));
+		GridLayout layout = new GridLayout(1, false);
+		layout.marginWidth = 0;
+		layout.marginHeight = 0;
+		layout.verticalSpacing = 0;
+		layout.horizontalSpacing = 0;
+		shell.setLayout(layout);
 
-		// 3. 위젯 추가
-		Label label = new Label(shell, SWT.CENTER);
-		label.setText("Hello, SWT World!");
+		Composite header = new Composite(shell, SWT.NONE);
+		header.setBackground(display.getSystemColor(SWT.COLOR_DARK_GRAY));
+		header.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+		GridData gridData = (GridData) header.getLayoutData();
+		gridData.heightHint = 30;
 
-		Canvas canvas = new Canvas(shell, SWT.CENTER);
-		canvas.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		Canvas canvas = new Canvas(shell, SWT.BACKGROUND);
+		canvas.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		Color color = canvas.getBackground();
+		float[] background = new float[] { color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f,
+				color.getAlpha() / 255f };
 
-		// 4. 창 열기
 		shell.open();
 
-		MemorySegment hwnd = NativeUtils.hwndOf(canvas.handle);
+		//
 
-		try (Arena arena = Arena.ofConfined(); ID2D1Factory factory = new ID2D1Factory(arena)) {
-			int hr = D2d1.D2D1CreateFactory(D2D1_FACTORY_TYPE.D2D1_FACTORY_TYPE_SINGLE_THREADED, factory);
-			if (hr == 0) {
-				LPRECT rect = new LPRECT(arena);
-				boolean ok = User32.GetClientRect(hwnd, rect);
-				if (ok) {
-					D2D1_SIZE_U size = new D2D1_SIZE_U(arena);
-					size.setWidth(rect.getRight() - rect.getLeft());
-					size.setHeight(rect.getBottom() - rect.getTop());
+		JDirect.init();
+		JDFont font1 = new JDFont("맑은 고딕", JDFont.WEIGHT_NORMAL, JDFont.STYLE_NORMAL, JDFont.STRETCH_NORMAL, 14);
+		JDirect.registryFont(font1);
 
-					D2D1_RENDER_TARGET_PROPERTIES props = new D2D1_RENDER_TARGET_PROPERTIES(arena);
-					D2D1_PIXEL_FORMAT format = new D2D1_PIXEL_FORMAT(arena);
-					props.setPixelFormat(format);
+		JDText text1 = new JDText(font1, "안녕하세요");
+		JDirect.registryText(text1);
 
+		JDGraphics g = JDirect.createGraphics(canvas.handle, 3 * 1024);
 
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		JDText text2 = new JDText(font1, "안녕하세요22", 350, 200);
+		g.registryText(text2);
+		g.setAntialiasMode(true);
 
-		// 5. 이벤트 루프: 창이 닫힐 때까지 대기
-		// 이 루프가 없으면 프로그램이 즉시 종료됩니다.
+		canvas.addPaintListener(e -> {
+			g.beginDraw();
+
+			g.clear(background[0], 1, background[2], background[3]);
+
+			g.setColor(0, 0, 1, 1);
+			g.drawRectangle(10.5f, 10.5f, 100, 100);
+
+			g.drawRoundedRectangle(120.5f, 10.5f, 100, 100, 10, 10);
+
+			g.drawCircle(280.5f, 60.5f, 50, 50);
+
+			g.setColor(1, 0, 0.9f, background[3]);
+			g.drawText(10, 10, text2);
+
+			g.endDraw();
+		});
+
+		canvas.addListener(SWT.Resize, e -> {
+			g.resize();
+		});
+
+		canvas.redraw();
+
+		//
+
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch()) {
 				display.sleep();
 			}
 		}
 
-		// 6. 리소스 해제
+		g.close();
+
+		JDirect.close();
+
 		display.dispose();
 	}
 }

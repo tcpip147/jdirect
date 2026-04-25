@@ -8,7 +8,11 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
 
+import com.tcpip147.jdirect.ffm.NativeUtils;
 import com.tcpip147.jdirect.ffm.Struct;
+import com.tcpip147.jdirect.ffm.enums.D2D1_FEATURE_LEVEL;
+import com.tcpip147.jdirect.ffm.enums.D2D1_RENDER_TARGET_TYPE;
+import com.tcpip147.jdirect.ffm.enums.D2D1_RENDER_TARGET_USAGE;
 
 //@formatter:off
 public class D2D1_RENDER_TARGET_PROPERTIES extends Struct {
@@ -32,18 +36,22 @@ public class D2D1_RENDER_TARGET_PROPERTIES extends Struct {
 	public D2D1_RENDER_TARGET_PROPERTIES(Arena arena) {
 		super(arena);
 	}
+	
+	public D2D1_RENDER_TARGET_PROPERTIES(MemorySegment ref) {
+		super(ref);
+	}
 
 	@Override
 	protected MemoryLayout getLayout() {
 		return LAYOUT;
 	}
 	
-	public int getType() {
-		return (int) TYPE.get(ref, 0);
+	public D2D1_RENDER_TARGET_TYPE getType() {
+		return (D2D1_RENDER_TARGET_TYPE) NativeUtils.from(D2D1_RENDER_TARGET_TYPE.class, (int) TYPE.get(ref, 0));
 	}
 	
-	public void setType(int type) {
-		TYPE.set(ref, 0, type);
+	public void setType(D2D1_RENDER_TARGET_TYPE e) {
+		TYPE.set(ref, 0, e.value);
 	}
 	
 	public D2D1_PIXEL_FORMAT getPixelFormat() {
@@ -51,8 +59,7 @@ public class D2D1_RENDER_TARGET_PROPERTIES extends Struct {
 	}
 	
 	public void setPixelFormat(D2D1_PIXEL_FORMAT pixelFormat) {
-		MemorySegment target = this.ref.asSlice(PIXEL_FORMAT_OFFSET, D2D1_PIXEL_FORMAT.LAYOUT.byteSize());
-		target.copyFrom(pixelFormat.ref);
+		ref.asSlice(PIXEL_FORMAT_OFFSET, D2D1_PIXEL_FORMAT.LAYOUT.byteSize()).copyFrom(pixelFormat.ref);
 	}
 	
 	public float getDpiX() {
@@ -71,19 +78,19 @@ public class D2D1_RENDER_TARGET_PROPERTIES extends Struct {
 		DPI_X.set(ref, 0, dpiY);
 	}
 	
-	public int getUsage() {
-		return (int) USAGE.get(ref, 0);
+	public D2D1_RENDER_TARGET_USAGE getUsage() {
+		return (D2D1_RENDER_TARGET_USAGE) NativeUtils.from(D2D1_RENDER_TARGET_USAGE.class, (int) USAGE.get(ref, 0));
 	}
 	
-	public void setUsage(int usage) {
-		USAGE.set(ref, 0, usage);
+	public void setUsage(D2D1_RENDER_TARGET_USAGE e) {
+		USAGE.set(ref, 0, e.value);
 	}
 	
-	public int getMinLevel() {
-		return (int) MIN_LEVEL.get(ref, 0);
+	public D2D1_FEATURE_LEVEL getMinLevel() {
+		return (D2D1_FEATURE_LEVEL) NativeUtils.from(D2D1_FEATURE_LEVEL.class, (int) MIN_LEVEL.get(ref, 0));
 	}
 	
-	public void setMinLevel(int minLevel) {
-		MIN_LEVEL.set(ref, 0, minLevel);
+	public void setMinLevel(D2D1_FEATURE_LEVEL e) {
+		MIN_LEVEL.set(ref, 0, e.value);
 	}
 }

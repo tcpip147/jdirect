@@ -7,6 +7,9 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NativeUtils {
 
@@ -32,5 +35,25 @@ public class NativeUtils {
 	
 	public static MemorySegment hwndOf(long handle) {
 		return MemorySegment.ofAddress(handle);
+	}
+
+
+	private static final Map<Class<?>, Map<Integer, Object>> CACHE = new ConcurrentHashMap<>();
+
+	@SuppressWarnings("unchecked")
+	public static <E extends Enum<E>> E from(Class<E> clazz, int value) {
+		Map<Integer, Object> map = CACHE.computeIfAbsent(clazz, _ -> {
+			Map<Integer, Object> internalMap = new HashMap<>();
+			try {
+				var field = clazz.getDeclaredField("value");
+				for (E constant : clazz.getEnumConstants()) {
+					internalMap.put(field.getInt(constant), constant);
+				}
+			} catch (Exception e) {
+				throw new RuntimeException("NativeEnum mapping failed for " + clazz.getName(), e);
+			}
+			return internalMap;
+		});
+		return (E) map.get(value);
 	}
 }

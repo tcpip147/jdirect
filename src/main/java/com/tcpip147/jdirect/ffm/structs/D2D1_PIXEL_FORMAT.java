@@ -7,7 +7,10 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
 
+import com.tcpip147.jdirect.ffm.NativeUtils;
 import com.tcpip147.jdirect.ffm.Struct;
+import com.tcpip147.jdirect.ffm.enums.D2D1_ALPHA_MODE;
+import com.tcpip147.jdirect.ffm.enums.DXGI_FORMAT;
 
 //@formatter:off
 public class D2D1_PIXEL_FORMAT extends Struct {
@@ -33,19 +36,19 @@ public class D2D1_PIXEL_FORMAT extends Struct {
 		return LAYOUT;
 	}
 	
-	public int getFormat() {
-		return (int) FORMAT.get(ref, 0);
+	public DXGI_FORMAT getFormat() {
+		return (DXGI_FORMAT) NativeUtils.from(DXGI_FORMAT.class, (int) FORMAT.get(ref, 0));
 	}
 	
-	public void setFormat(int format) {
-		FORMAT.set(ref, 0, format);
+	public void setFormat(DXGI_FORMAT e) {
+		FORMAT.set(ref, 0, e.value);
 	}
 	
-	public int getAlphaMode() {
-		return (int) ALPHA_MODE.get(ref, 0);
+	public D2D1_ALPHA_MODE getAlphaMode() {
+		return (D2D1_ALPHA_MODE) NativeUtils.from(D2D1_ALPHA_MODE.class, (int) ALPHA_MODE.get(ref, 0));
 	}
 	
-	public void setAlphaMode(int alphaMode) {
-		ALPHA_MODE.set(ref, 0, alphaMode);
+	public void setAlphaMode(D2D1_ALPHA_MODE e) {
+		ALPHA_MODE.set(ref, 0, e.value);
 	}
 }

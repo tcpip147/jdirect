@@ -4,6 +4,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
 
 import com.tcpip147.jdirect.ffm.Struct;
@@ -26,6 +27,10 @@ public class LPRECT extends Struct {
 	public LPRECT(Arena arena) {
 		super(arena);
 	}
+	
+	public LPRECT(MemorySegment ref) {
+		super(ref);
+	}
 
 	@Override
 	protected MemoryLayout getLayout() {
@@ -36,31 +41,31 @@ public class LPRECT extends Struct {
 		return (int) LEFT.get(ref, 0);
 	}
 	
-	public void setLeft(int left) {
-		LEFT.set(ref, 0, left);
+	public void setLeft(int value) {
+		LEFT.set(ref, 0, value);
 	}
 	
 	public int getTop() {
 		return (int) TOP.get(ref, 0);
 	}
 	
-	public void setTop(int top) {
-		LEFT.set(ref, 0, top);
+	public void setTop(int value) {
+		LEFT.set(ref, 0, value);
 	}
 	
 	public int getRight() {
 		return (int) RIGHT.get(ref, 0);
 	}
 	
-	public void setRight(int top) {
-		TOP.set(ref, 0, top);
+	public void setRight(int value) {
+		TOP.set(ref, 0, value);
 	}
 	
 	public int getBottom() {
 		return (int) BOTTOM.get(ref, 0);
 	}
 	
-	public void setBottom(int bottom) {
-		BOTTOM.set(ref, 0, bottom);;
+	public void setBottom(int value) {
+		BOTTOM.set(ref, 0, value);
 	}
 }
