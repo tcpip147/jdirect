@@ -1,0 +1,14 @@
+package com.tcpip147.jdirect.ffm.enums;
+
+import lombok.AllArgsConstructor;
+
+//@formatter:off
+@AllArgsConstructor
+public enum D2D1_FIGURE_END {
+    D2D1_FIGURE_END_OPEN(0),
+    D2D1_FIGURE_END_CLOSED(1),
+    D2D1_FIGURE_END_FORCE_DWORD(0xffffffff)
+    ;
+	
+	public final int value;
+}

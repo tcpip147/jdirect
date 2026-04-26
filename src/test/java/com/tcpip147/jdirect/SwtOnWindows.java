@@ -53,6 +53,9 @@ public class SwtOnWindows {
 		g.registryText(text2);
 		g.setAntialiasMode(true);
 
+		JDPath path = new JDPath(new float[] { 300, 300, 400, 400, 200, 400 });
+		g.registryPath(path);
+
 		canvas.addPaintListener(e -> {
 			g.beginDraw();
 
@@ -67,6 +70,19 @@ public class SwtOnWindows {
 
 			g.setColor(1, 0, 0.9f, background[3]);
 			g.drawText(10, 10, text2);
+
+			g.translate(100, 0);
+
+			g.fillPath(path);
+			g.rotate(10, path.path[0], path.path[1]);
+			g.fillPath(path);
+			g.resetRotate();
+			g.rotate(20, path.path[0], path.path[1]);
+			g.setColor(0, 0, 1, 1);
+			g.fillPath(path);
+			g.resetRotate();
+
+			g.resetTransform();
 
 			g.endDraw();
 		});

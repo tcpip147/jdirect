@@ -17,6 +17,7 @@ import com.tcpip147.jdirect.ffm.enums.D2D1_DRAW_TEXT_OPTIONS;
 import com.tcpip147.jdirect.ffm.enums.DWRITE_MEASURING_MODE;
 import com.tcpip147.jdirect.ffm.structs.D2D1_COLOR_F;
 import com.tcpip147.jdirect.ffm.structs.D2D1_ELLIPSE;
+import com.tcpip147.jdirect.ffm.structs.D2D1_MATRIX_3X2_F;
 import com.tcpip147.jdirect.ffm.structs.D2D1_POINT_2F;
 import com.tcpip147.jdirect.ffm.structs.D2D1_RECT_F;
 import com.tcpip147.jdirect.ffm.structs.D2D1_ROUNDED_RECT;
@@ -78,12 +79,6 @@ public class ID2D1HwndRenderTarget extends ComObject {
 		}
 	}
 
-	private static MethodHandle SetTransform;
-
-	public void SetTransform() {
-		// TODO
-	}
-
 	private static MethodHandle Clear;
 
 	public void Clear(D2D1_COLOR_F color) {
@@ -98,6 +93,39 @@ public class ID2D1HwndRenderTarget extends ComObject {
 			Clear.invokeExact(
 				ref.get(ADDRESS, 0),
 				color.ref
+			);
+		} catch (Throwable e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private static MethodHandle DrawLine;
+
+	public void DrawLine(
+			D2D1_POINT_2F point0,
+			D2D1_POINT_2F point1,
+			ID2D1SolidColorBrush brush,
+			float strokeWidth
+		) {
+		if (DrawLine == null) {
+			FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(
+				ADDRESS,
+				D2D1_POINT_2F.LAYOUT,
+				D2D1_POINT_2F.LAYOUT,
+				ADDRESS,
+				JAVA_FLOAT,
+				ADDRESS
+			);
+			DrawLine = NativeUtils.LINKER.downcallHandle(findSymbol(15), descriptor);
+		}
+		try {
+			DrawLine.invokeExact(
+				ref.get(ADDRESS, 0),
+				point0.ref,
+				point1.ref,
+				brush.ref.get(ADDRESS, 0),
+				strokeWidth,
+				MemorySegment.NULL
 			);
 		} catch (Throwable e) {
 			throw new RuntimeException(e);
@@ -313,6 +341,33 @@ public class ID2D1HwndRenderTarget extends ComObject {
 		}
 	}
 
+	private static MethodHandle FillGeometry;
+
+	public void FillGeometry(
+	        ID2D1PathGeometry geometry,
+	        ID2D1SolidColorBrush brush
+		) {
+		if (FillGeometry == null) {
+			FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(
+				ADDRESS,
+				ADDRESS,
+				ADDRESS,
+				ADDRESS
+			);
+			FillGeometry = NativeUtils.LINKER.downcallHandle(findSymbol(23), descriptor);
+		}
+		try {
+			FillGeometry.invokeExact(
+				ref.get(ADDRESS, 0),
+				geometry.ref.get(ADDRESS, 0),
+				brush.ref.get(ADDRESS, 0),
+				MemorySegment.NULL
+			);
+		} catch (Throwable e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	private static MethodHandle DrawText;
 
 	public void DrawText(
@@ -378,6 +433,28 @@ public class ID2D1HwndRenderTarget extends ComObject {
 				textLayout.ref.get(ADDRESS, 0),
 				defaultFillBrush.ref.get(ADDRESS, 0),
 				options.value
+			);
+		} catch (Throwable e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private static MethodHandle SetTransform;
+
+	public void SetTransform(
+			D2D1_MATRIX_3X2_F transform
+		) {
+		if (SetTransform == null) {
+			FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(
+				ADDRESS,
+				ADDRESS
+			);
+			SetTransform = NativeUtils.LINKER.downcallHandle(findSymbol(30), descriptor);
+		}
+		try {
+			SetTransform.invokeExact(
+				ref.get(ADDRESS, 0),
+				transform.ref
 			);
 		} catch (Throwable e) {
 			throw new RuntimeException(e);

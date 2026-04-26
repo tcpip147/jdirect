@@ -7,7 +7,9 @@ import java.util.Map;
 
 import com.tcpip147.jdirect.ffm.NativeUtils;
 import com.tcpip147.jdirect.ffm.WCHAR;
+import com.tcpip147.jdirect.ffm.coms.ID2D1GeometrySink;
 import com.tcpip147.jdirect.ffm.coms.ID2D1HwndRenderTarget;
+import com.tcpip147.jdirect.ffm.coms.ID2D1PathGeometry;
 import com.tcpip147.jdirect.ffm.coms.ID2D1SolidColorBrush;
 import com.tcpip147.jdirect.ffm.coms.IDWriteTextFormat;
 import com.tcpip147.jdirect.ffm.coms.IDWriteTextLayout;
@@ -15,10 +17,13 @@ import com.tcpip147.jdirect.ffm.dll.D2d1;
 import com.tcpip147.jdirect.ffm.dll.User32;
 import com.tcpip147.jdirect.ffm.enums.D2D1_ANTIALIAS_MODE;
 import com.tcpip147.jdirect.ffm.enums.D2D1_DRAW_TEXT_OPTIONS;
+import com.tcpip147.jdirect.ffm.enums.D2D1_FIGURE_BEGIN;
+import com.tcpip147.jdirect.ffm.enums.D2D1_FIGURE_END;
 import com.tcpip147.jdirect.ffm.enums.DWRITE_PARAGRAPH_ALIGNMENT;
 import com.tcpip147.jdirect.ffm.enums.DWRITE_TEXT_ALIGNMENT;
 import com.tcpip147.jdirect.ffm.structs.D2D1_COLOR_F;
 import com.tcpip147.jdirect.ffm.structs.D2D1_ELLIPSE;
+import com.tcpip147.jdirect.ffm.structs.D2D1_MATRIX_3X2_F;
 import com.tcpip147.jdirect.ffm.structs.D2D1_POINT_2F;
 import com.tcpip147.jdirect.ffm.structs.D2D1_RECT_F;
 import com.tcpip147.jdirect.ffm.structs.D2D1_ROUNDED_RECT;
@@ -40,6 +45,10 @@ public class JDGraphics implements AutoCloseable {
 	private final Map<Integer, IDWriteTextFormat> fontCache = new HashMap<>();
 	private final Map<Integer, D2D1_COLOR_F> colorCache = new HashMap<>();
 	private final Map<Integer, IDWriteTextLayout> textCache = new HashMap<>();
+	private final Map<Integer, ID2D1PathGeometry> pathCache = new HashMap<>();
+
+	private final float[] translateTransform = new float[] { 0, 0 };
+	private final float[] rotateTransform = new float[] { 0, 0, 0 };
 
 	protected JDGraphics(long handle, JDirect direct, long memorySize) {
 		this.memorySize = memorySize;
@@ -71,9 +80,7 @@ public class JDGraphics implements AutoCloseable {
 			color.setA(1);
 
 			colorBrush = new ID2D1SolidColorBrush(graphicsArena);
-
-			renderTarget.CreateSolidColorBrush(color, colorBrush);
-
+			hr = renderTarget.CreateSolidColorBrush(color, colorBrush);
 			if (hr != 0) {
 				throw new RuntimeException("Faild to create ColorBrush. HRESULT: 0x%08x".formatted(hr));
 			}
@@ -146,6 +153,16 @@ public class JDGraphics implements AutoCloseable {
 		if (hr != 0) {
 			System.out.println(hr);
 		}
+	}
+
+	public void drawLine(float x0, float y0, float x1, float y1) {
+		D2D1_POINT_2F point0 = new D2D1_POINT_2F(allocate(D2D1_POINT_2F.LAYOUT.byteSize()));
+		point0.setX(x0);
+		point0.setY(y0);
+		D2D1_POINT_2F point1 = new D2D1_POINT_2F(allocate(D2D1_POINT_2F.LAYOUT.byteSize()));
+		point1.setX(x1);
+		point1.setY(y1);
+		renderTarget.DrawLine(point0, point1, colorBrush, 1f);
 	}
 
 	public void drawRectangle(float x, float y, float width, float height) {
@@ -230,6 +247,70 @@ public class JDGraphics implements AutoCloseable {
 		renderTarget.DrawTextLayout(origin, textLayout, colorBrush, D2D1_DRAW_TEXT_OPTIONS.D2D1_DRAW_TEXT_OPTIONS_NONE);
 	}
 
+	public void fillPath(JDPath path) {
+		ID2D1PathGeometry pathGeometry = pathCache.get(path.resourceIndex);
+		renderTarget.FillGeometry(pathGeometry, colorBrush);
+	}
+
+	public void translate(float x, float y) {
+		translateTransform[0] += x;
+		translateTransform[1] += y;
+		setTransform();
+	}
+
+	public void rotate(float degrees, float px, float py) {
+		rotateTransform[0] += degrees;
+		rotateTransform[1] += px;
+		rotateTransform[2] += py;
+		setTransform();
+	}
+
+	public void resetTransform() {
+		translateTransform[0] = 0;
+		translateTransform[1] = 0;
+		rotateTransform[0] = 0;
+		rotateTransform[1] = 0;
+		rotateTransform[2] = 0;
+		setTransform();
+	}
+
+	public void resetTranslate() {
+		translateTransform[0] = 0;
+		translateTransform[1] = 0;
+		setTransform();
+	}
+
+	public void resetRotate() {
+		rotateTransform[0] = 0;
+		rotateTransform[1] = 0;
+		rotateTransform[2] = 0;
+		setTransform();
+	}
+
+	private void setTransform() {
+		double rad = Math.toRadians(rotateTransform[0]);
+		float s = (float) Math.sin(rad);
+		float c = (float) Math.cos(rad);
+
+		float m11 = c;
+		float m12 = s;
+		float m21 = -s;
+		float m22 = c;
+
+		float m31 = translateTransform[0] + rotateTransform[1] - (rotateTransform[1] * c - rotateTransform[2] * s);
+		float m32 = translateTransform[1] + rotateTransform[2] - (rotateTransform[1] * s + rotateTransform[2] * c);
+
+		D2D1_MATRIX_3X2_F transform = new D2D1_MATRIX_3X2_F(allocate(D2D1_MATRIX_3X2_F.LAYOUT.byteSize()));
+		transform.set_11(m11);
+		transform.set_12(m12);
+		transform.set_21(m21);
+		transform.set_22(m22);
+		transform.set_31(m31);
+		transform.set_32(m32);
+
+		renderTarget.SetTransform(transform);
+	}
+
 	public void setAntialiasMode(boolean on) {
 		renderTarget.SetAntialiasMode(on ? D2D1_ANTIALIAS_MODE.D2D1_ANTIALIAS_MODE_PER_PRIMITIVE
 				: D2D1_ANTIALIAS_MODE.D2D1_ANTIALIAS_MODE_ALIASED);
@@ -251,6 +332,12 @@ public class JDGraphics implements AutoCloseable {
 		for (IDWriteTextLayout layout : textCache.values()) {
 			try {
 				layout.close();
+			} catch (Exception e) {
+			}
+		}
+		for (ID2D1PathGeometry path : pathCache.values()) {
+			try {
+				path.close();
 			} catch (Exception e) {
 			}
 		}
@@ -290,6 +377,40 @@ public class JDGraphics implements AutoCloseable {
 			textLayout.SetTextAlignment(NativeUtils.from(DWRITE_TEXT_ALIGNMENT.class, text.horizontalAlign));
 			textLayout.SetParagraphAlignment(NativeUtils.from(DWRITE_PARAGRAPH_ALIGNMENT.class, text.verticalAlign));
 			textCache.put(text.resourceIndex, textLayout);
+		}
+	}
+
+	public void registryPath(JDPath path) {
+		path.arena = JDFont.ARENA_GRAPHICS;
+		try (Arena localArena = Arena.ofConfined()) {
+			ID2D1PathGeometry pathGeometry = new ID2D1PathGeometry(graphicsArena);
+			int hr = direct.direct2dFactory.CreatePathGeometry(pathGeometry);
+			if (hr != 0) {
+				throw new RuntimeException("Faild to create PathGeometry. HRESULT: 0x%08x".formatted(hr));
+			}
+
+			ID2D1GeometrySink sink = new ID2D1GeometrySink(localArena);
+			pathGeometry.Open(sink);
+
+			D2D1_POINT_2F startPoint = new D2D1_POINT_2F(localArena);
+			startPoint.setX(path.path[0]);
+			startPoint.setY(path.path[1]);
+			sink.BeginFigure(startPoint, D2D1_FIGURE_BEGIN.D2D1_FIGURE_BEGIN_FILLED);
+
+			for (int i = 2; i < path.path.length; i += 2) {
+				D2D1_POINT_2F point = new D2D1_POINT_2F(localArena);
+				point.setX(path.path[i]);
+				point.setY(path.path[i + 1]);
+				sink.AddLine(point);
+			}
+
+			sink.EndFigure(D2D1_FIGURE_END.D2D1_FIGURE_END_CLOSED);
+			sink.Close();
+			sink.close();
+
+			pathCache.put(path.resourceIndex, pathGeometry);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 	}
 }

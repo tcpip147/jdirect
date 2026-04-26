@@ -21,8 +21,30 @@ public class ID2D1Factory extends ComObject {
 	public ID2D1Factory(Arena arena) {
 		super(arena);
 	}
+	
+	private static MethodHandle CreatePathGeometry;
 
-	// https://learn.microsoft.com/en-us/windows/win32/api/d2d1/nf-d2d1-id2d1factory-createhwndrendertarget(constd2d1_render_target_properties__constd2d1_hwnd_render_target_properties__id2d1hwndrendertarget)
+	public int CreatePathGeometry(
+			ID2D1PathGeometry pathGeometry
+		) {
+		if (CreatePathGeometry == null) {
+			FunctionDescriptor descriptor = FunctionDescriptor.of(
+				JAVA_INT,
+				ADDRESS,
+				ADDRESS
+			);
+			CreatePathGeometry = NativeUtils.LINKER.downcallHandle(findSymbol(10), descriptor);
+		}
+		try {
+			return (int) CreatePathGeometry.invokeExact(
+				ref.get(ADDRESS, 0),
+				pathGeometry.ref
+			);
+		} catch (Throwable e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	private static MethodHandle CreateHwndRenderTarget;
 
 	public int CreateHwndRenderTarget(
