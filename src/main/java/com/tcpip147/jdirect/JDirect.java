@@ -33,6 +33,11 @@ public class JDirect {
 
 	public static void close() {
 		INSTANCE._close();
+		INSTANCE = null;
+		JDFont.close();
+		JDColor.close();
+		JDPath.close();
+		JDText.close();
 	}
 
 	public static void registryFont(JDFont font) {
@@ -56,50 +61,52 @@ public class JDirect {
 	public final Arena globalArena;
 	public final ID2D1Factory direct2dFactory;
 	public final IDWriteFactory directWriteFactory;
-	public final Map<Integer, IDWriteTextFormat> fontCache = new HashMap<>();
 	public final Map<Integer, D2D1_COLOR_F> colorCache = new HashMap<>();
+	public final Map<Integer, IDWriteTextFormat> fontCache = new HashMap<>();
 	public final Map<Integer, IDWriteTextLayout> textCache = new HashMap<>();
 
 	public JDirect() {
-		globalArena = Arena.ofShared();
-		direct2dFactory = new ID2D1Factory(globalArena);
-		int hr = D2d1.D2D1CreateFactory(D2D1_FACTORY_TYPE.D2D1_FACTORY_TYPE_SINGLE_THREADED, direct2dFactory);
-		if (hr != 0) {
-			throw new RuntimeException("Faild to create Direct2D factory. HRESULT: 0x%08x".formatted(hr));
-		}
+		try {
+			globalArena = Arena.ofShared();
+			direct2dFactory = new ID2D1Factory(globalArena);
+			int hr = D2d1.D2D1CreateFactory(D2D1_FACTORY_TYPE.D2D1_FACTORY_TYPE_SINGLE_THREADED, direct2dFactory);
+			if (hr != 0) {
+				throw new RuntimeException("Faild to create Direct2D factory. HRESULT: 0x%08x".formatted(hr));
+			}
 
-		directWriteFactory = new IDWriteFactory(globalArena);
-		hr = Dwrite.DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_SHARED, directWriteFactory);
-		if (hr != 0) {
-			throw new RuntimeException("Faild to create DirectWrite factory. HRESULT: 0x%08x".formatted(hr));
+			directWriteFactory = new IDWriteFactory(globalArena);
+			hr = Dwrite.DWriteCreateFactory(DWRITE_FACTORY_TYPE.DWRITE_FACTORY_TYPE_SHARED, directWriteFactory);
+			if (hr != 0) {
+				throw new RuntimeException("Faild to create DirectWrite factory. HRESULT: 0x%08x".formatted(hr));
+			}
+		} catch (Exception e) {
+			JDirect.close();
+			throw new RuntimeException("Faild to initialize");
 		}
 	}
 
 	private void _close() {
+		for (IDWriteTextFormat font : fontCache.values()) {
+			try {
+				font.close();
+			} catch (Exception e) {
+			}
+		}
 		for (IDWriteTextLayout layout : textCache.values()) {
 			try {
 				layout.close();
 			} catch (Exception e) {
 			}
 		}
-		globalArena.close();
-	}
-
-	protected IDWriteTextFormat _registryFont(JDFont font, Arena arena) {
-		try (Arena localArena = Arena.ofConfined()) {
-			WCHAR fontFamilyName = new WCHAR(localArena, font.name);
-			DWRITE_FONT_WEIGHT fontWeight = NativeUtils.from(DWRITE_FONT_WEIGHT.class, font.weight);
-			DWRITE_FONT_STYLE fontStyle = NativeUtils.from(DWRITE_FONT_STYLE.class, font.style);
-			DWRITE_FONT_STRETCH fontStretch = NativeUtils.from(DWRITE_FONT_STRETCH.class, font.stretch);
-			IDWriteTextFormat textFormat = new IDWriteTextFormat(arena);
-			WCHAR localName = new WCHAR(localArena, "ko-KR");
-			int hr = directWriteFactory.CreateTextFormat(fontFamilyName, fontWeight, fontStyle, fontStretch, font.size,
-					localName, textFormat);
-			if (hr != 0) {
-				throw new RuntimeException("Faild to create TextFormat. HRESULT: 0x%08x".formatted(hr));
-			}
-			return textFormat;
+		try {
+			direct2dFactory.close();
+		} catch (Exception e) {
 		}
+		try {
+			directWriteFactory.close();
+		} catch (Exception e) {
+		}
+		globalArena.close();
 	}
 
 	protected D2D1_COLOR_F _registryColor(JDColor color, Arena arena) {
@@ -111,17 +118,52 @@ public class JDirect {
 		return c;
 	}
 
+	protected IDWriteTextFormat _registryFont(JDFont font, Arena arena) {
+		IDWriteTextFormat textFormat = null;
+		try (Arena localArena = Arena.ofConfined()) {
+			WCHAR fontFamilyName = new WCHAR(localArena, font.name);
+			DWRITE_FONT_WEIGHT fontWeight = NativeUtils.from(DWRITE_FONT_WEIGHT.class, font.weight);
+			DWRITE_FONT_STYLE fontStyle = NativeUtils.from(DWRITE_FONT_STYLE.class, font.style);
+			DWRITE_FONT_STRETCH fontStretch = NativeUtils.from(DWRITE_FONT_STRETCH.class, font.stretch);
+			textFormat = new IDWriteTextFormat(arena);
+			WCHAR localName = new WCHAR(localArena, "ko-KR");
+			int hr = directWriteFactory.CreateTextFormat(fontFamilyName, fontWeight, fontStyle, fontStretch, font.size,
+					localName, textFormat);
+			if (hr != 0) {
+				throw new RuntimeException("Faild to create TextFormat. HRESULT: 0x%08x".formatted(hr));
+			}
+			return textFormat;
+		} catch (Exception e) {
+			if (textFormat != null) {
+				try {
+					textFormat.close();
+				} catch (Exception e1) {
+				}
+			}
+			throw new RuntimeException("Faild to create TextFormat.");
+		}
+	}
+
 	protected IDWriteTextLayout _registryText(JDText text, Arena arena) {
+		IDWriteTextLayout textLayout = null;
 		if (text.font.arena == JDFont.ARENA_GLOBAL) {
 			try (Arena localArena = Arena.ofConfined()) {
 				WCHAR string = new WCHAR(localArena, text.text);
-				IDWriteTextLayout textLayout = new IDWriteTextLayout(arena);
+				textLayout = new IDWriteTextLayout(arena);
 				int hr = directWriteFactory.CreateTextLayout(string, string.size,
 						fontCache.get(text.font.resourceIndex), text.width, text.height, textLayout);
 				if (hr != 0) {
 					throw new RuntimeException("Faild to create TextLayout. HRESULT: 0x%08x".formatted(hr));
 				}
 				return textLayout;
+			} catch (Exception e) {
+				if (textLayout != null) {
+					try {
+						textLayout.close();
+					} catch (Exception e1) {
+					}
+				}
+				throw new RuntimeException("Faild to create TextLayout.");
 			}
 		} else {
 			throw new RuntimeException("Invalid Font");

@@ -28,7 +28,7 @@ public class JDFont {
 	public static final int STRETCH_EXPANDED = 7;
 	public static final int STRETCH_EXTRA_EXPANDED = 8;
 	public static final int STRETCH_ULTRA_EXPANDED = 9;
-	
+
 	public final String name;
 	public final int weight;
 	public final int style;
@@ -50,5 +50,9 @@ public class JDFont {
 		this.size = size;
 		resourceIndex = nextResourceIndex;
 		nextResourceIndex++;
+	}
+
+	public static void close() {
+		nextResourceIndex = 0;
 	}
 }

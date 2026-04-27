@@ -38,6 +38,10 @@ public class JDText {
 		nextResourceIndex++;
 	}
 
+	public static void close() {
+		nextResourceIndex = 0;
+	}
+
 	public void setWidth(float width) {
 		this.width = width;
 	}

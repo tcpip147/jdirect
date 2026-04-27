@@ -42,8 +42,8 @@ public class JDGraphics implements AutoCloseable {
 	private Arena drawingArena;
 	private MemorySegment drawingMemory;
 	private int drawingMemoryOffset;
-	private final Map<Integer, IDWriteTextFormat> fontCache = new HashMap<>();
 	private final Map<Integer, D2D1_COLOR_F> colorCache = new HashMap<>();
+	private final Map<Integer, IDWriteTextFormat> fontCache = new HashMap<>();
 	private final Map<Integer, IDWriteTextLayout> textCache = new HashMap<>();
 	private final Map<Integer, ID2D1PathGeometry> pathCache = new HashMap<>();
 
@@ -54,9 +54,9 @@ public class JDGraphics implements AutoCloseable {
 		this.memorySize = memorySize;
 		graphicsArena = Arena.ofConfined();
 		hwnd = MemorySegment.ofAddress(handle);
+		drawingArena = Arena.ofConfined();
 		this.direct = direct;
 		init();
-		drawingArena = Arena.ofConfined();
 	}
 
 	private void init() {
@@ -84,6 +84,9 @@ public class JDGraphics implements AutoCloseable {
 			if (hr != 0) {
 				throw new RuntimeException("Faild to create ColorBrush. HRESULT: 0x%08x".formatted(hr));
 			}
+		} catch (Exception e) {
+			close();
+			throw new RuntimeException("Failed to Initialize");
 		}
 	}
 
@@ -319,15 +322,25 @@ public class JDGraphics implements AutoCloseable {
 	@Override
 	public void close() {
 		drawingArena.close();
-		try {
-			renderTarget.close();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+		if (renderTarget != null) {
+			try {
+				renderTarget.close();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 		}
-		try {
-			colorBrush.close();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+		if (colorBrush != null) {
+			try {
+				colorBrush.close();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+		for (IDWriteTextFormat font : fontCache.values()) {
+			try {
+				font.close();
+			} catch (Exception e) {
+			}
 		}
 		for (IDWriteTextLayout layout : textCache.values()) {
 			try {
@@ -358,9 +371,10 @@ public class JDGraphics implements AutoCloseable {
 
 	public void registryText(JDText text) {
 		text.arena = JDFont.ARENA_GRAPHICS;
+		IDWriteTextLayout textLayout = null;
 		try (Arena localArena = Arena.ofConfined()) {
 			WCHAR string = new WCHAR(localArena, text.text);
-			IDWriteTextLayout textLayout = new IDWriteTextLayout(graphicsArena);
+			textLayout = new IDWriteTextLayout(graphicsArena);
 			IDWriteTextFormat textFormat;
 			if (text.font.arena == JDFont.ARENA_GLOBAL) {
 				textFormat = direct.fontCache.get(text.font.resourceIndex);
@@ -377,19 +391,29 @@ public class JDGraphics implements AutoCloseable {
 			textLayout.SetTextAlignment(NativeUtils.from(DWRITE_TEXT_ALIGNMENT.class, text.horizontalAlign));
 			textLayout.SetParagraphAlignment(NativeUtils.from(DWRITE_PARAGRAPH_ALIGNMENT.class, text.verticalAlign));
 			textCache.put(text.resourceIndex, textLayout);
+		} catch (Exception e) {
+			if (textLayout != null) {
+				try {
+					textLayout.close();
+				} catch (Exception e1) {
+				}
+			}
+			throw new RuntimeException("Faild to create TextLayout.");
 		}
 	}
 
 	public void registryPath(JDPath path) {
 		path.arena = JDFont.ARENA_GRAPHICS;
+		ID2D1PathGeometry pathGeometry = null;
+		ID2D1GeometrySink sink = null;
 		try (Arena localArena = Arena.ofConfined()) {
-			ID2D1PathGeometry pathGeometry = new ID2D1PathGeometry(graphicsArena);
+			pathGeometry = new ID2D1PathGeometry(graphicsArena);
 			int hr = direct.direct2dFactory.CreatePathGeometry(pathGeometry);
 			if (hr != 0) {
 				throw new RuntimeException("Faild to create PathGeometry. HRESULT: 0x%08x".formatted(hr));
 			}
 
-			ID2D1GeometrySink sink = new ID2D1GeometrySink(localArena);
+			sink = new ID2D1GeometrySink(localArena);
 			pathGeometry.Open(sink);
 
 			D2D1_POINT_2F startPoint = new D2D1_POINT_2F(localArena);
@@ -410,6 +434,18 @@ public class JDGraphics implements AutoCloseable {
 
 			pathCache.put(path.resourceIndex, pathGeometry);
 		} catch (Exception e) {
+			if (pathGeometry != null) {
+				try {
+					pathGeometry.close();
+				} catch (Exception e1) {
+				}
+			}
+			if (sink != null) {
+				try {
+					sink.close();
+				} catch (Exception e1) {
+				}
+			}
 			throw new RuntimeException(e);
 		}
 	}

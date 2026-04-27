@@ -16,4 +16,8 @@ public class JDPath {
 		resourceIndex = nextResourceIndex;
 		nextResourceIndex++;
 	}
+
+	public static void close() {
+		nextResourceIndex = 0;
+	}
 }
