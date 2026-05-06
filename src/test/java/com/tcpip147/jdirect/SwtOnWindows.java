@@ -1,7 +1,6 @@
 package com.tcpip147.jdirect;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Canvas;
@@ -32,57 +31,22 @@ public class SwtOnWindows {
 
 		Canvas canvas = new Canvas(shell, SWT.BACKGROUND);
 		canvas.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		Color color = canvas.getBackground();
-		float[] background = new float[] { color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f,
-				color.getAlpha() / 255f };
 
 		shell.open();
 
 		//
 
-		JDirect.init();
-		JDFont font1 = new JDFont("맑은 고딕", JDFont.WEIGHT_NORMAL, JDFont.STYLE_NORMAL, JDFont.STRETCH_NORMAL, 14);
-		JDirect.registryFont(font1);
+		JDGraphics g = JDGraphics.create(canvas.handle, 3 * 1024);
 
-		JDText text1 = new JDText(font1, "안녕하세요");
-		JDirect.registryText(text1);
-
-		JDGraphics g = JDirect.createGraphics(canvas.handle, 3 * 1024);
-
-		JDText text2 = new JDText(font1, "안녕하세요22", 350, 200);
-		g.registryText(text2);
-		g.setAntialiasMode(true);
-
-		JDPath path = new JDPath(new float[] { 300, 300, 400, 400, 200, 400 });
-		g.registryPath(path);
-
-		canvas.addPaintListener(e -> {
+		canvas.addPaintListener(_ -> {
 			g.beginDraw();
 
-			g.clear(background[0], 1, background[2], background[3]);
+			g.clear("#F5F5F5");
 
-			g.setColor(0, 0, 1, 1);
-			g.drawRectangle(10.5f, 10.5f, 100, 100);
+			g.translate(0.5f, 0.5f);
 
-			g.drawRoundedRectangle(120.5f, 10.5f, 100, 100, 10, 10);
-
-			g.drawCircle(280.5f, 60.5f, 50, 50);
-
-			g.setColor(1, 0, 0.9f, background[3]);
-			g.drawText(10, 10, text2);
-
-			g.translate(100, 0);
-
-			g.fillPath(path);
-			g.rotate(10, path.path[0], path.path[1]);
-			g.fillPath(path);
-			g.resetRotate();
-			g.rotate(20, path.path[0], path.path[1]);
-			g.setColor(0, 0, 1, 1);
-			g.fillPath(path);
-			g.resetRotate();
-
-			g.resetTransform();
+			g.setColor("#FF0000");
+			g.drawRect(10, 10, 100, 100);
 
 			g.endDraw();
 		});
@@ -101,9 +65,10 @@ public class SwtOnWindows {
 			}
 		}
 
-		g.close();
-
-		JDirect.close();
+		try {
+			g.close();
+		} catch (Exception e1) {
+		}
 
 		display.dispose();
 	}

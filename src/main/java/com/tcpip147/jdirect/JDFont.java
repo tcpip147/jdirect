@@ -1,7 +1,13 @@
 package com.tcpip147.jdirect;
 
-public class JDFont {
+import java.util.Objects;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class JDFont {
 	public static final int WEIGHT_THIN = 100;
 	public static final int WEIGHT_EXTRA_LIGHT = 200;
 	public static final int WEIGHT_LIGHT = 300;
@@ -29,30 +35,39 @@ public class JDFont {
 	public static final int STRETCH_EXTRA_EXPANDED = 8;
 	public static final int STRETCH_ULTRA_EXPANDED = 9;
 
-	public final String name;
-	public final int weight;
-	public final int style;
-	public final int stretch;
-	public final int size;
+	private String name;
+	private int weight;
+	private int style;
+	private int stretch;
+	private int size;
 
-	protected final int resourceIndex;
-	private static int nextResourceIndex = 0;
-
-	public static final int ARENA_GLOBAL = 1;
-	public static final int ARENA_GRAPHICS = 2;
-	protected int arena;
-
-	public JDFont(String name, int weight, int style, int stretch, int size) {
-		this.name = name;
-		this.weight = weight;
-		this.style = style;
-		this.stretch = stretch;
-		this.size = size;
-		resourceIndex = nextResourceIndex;
-		nextResourceIndex++;
+	public JDFont() {
+		name = "맑은 고딕";
+		weight = WEIGHT_NORMAL;
+		style = STYLE_NORMAL;
+		stretch = STRETCH_NORMAL;
+		size = 12;
 	}
 
-	public static void close() {
-		nextResourceIndex = 0;
+	@Override
+	public int hashCode() {
+		return Objects.hash(name, size, stretch, style, weight);
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		JDFont other = (JDFont) obj;
+		return Objects.equals(name, other.name) && size == other.size && stretch == other.stretch
+				&& style == other.style && weight == other.weight;
+	}
+
 }

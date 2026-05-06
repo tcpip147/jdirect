@@ -12,6 +12,7 @@ import com.tcpip147.jdirect.ffm.ComObject;
 import com.tcpip147.jdirect.ffm.NativeUtils;
 import com.tcpip147.jdirect.ffm.structs.D2D1_HWND_RENDER_TARGET_PROPERTIES;
 import com.tcpip147.jdirect.ffm.structs.D2D1_RENDER_TARGET_PROPERTIES;
+import com.tcpip147.jdirect.ffm.structs.D2D1_STROKE_STYLE_PROPERTIES;
 
 //@formatter:off
 public class ID2D1Factory extends ComObject {
@@ -39,6 +40,36 @@ public class ID2D1Factory extends ComObject {
 			return (int) CreatePathGeometry.invokeExact(
 				ref.get(ADDRESS, 0),
 				pathGeometry.ref
+			);
+		} catch (Throwable e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private static MethodHandle CreateStrokeStyle;
+
+	public int CreateStrokeStyle(
+			D2D1_STROKE_STYLE_PROPERTIES strokeStyleProperties,
+			ID2D1StrokeStyle strokeStyle
+		) {
+		if (CreateStrokeStyle == null) {
+			FunctionDescriptor descriptor = FunctionDescriptor.of(
+				JAVA_INT,
+				ADDRESS,
+				ADDRESS,
+				ADDRESS,
+				JAVA_INT,
+				ADDRESS
+			);
+			CreateStrokeStyle = NativeUtils.LINKER.downcallHandle(findSymbol(11), descriptor);
+		}
+		try {
+			return (int) CreateStrokeStyle.invokeExact(
+				ref.get(ADDRESS, 0),
+				strokeStyleProperties.ref,
+				MemorySegment.NULL,
+				0,
+				strokeStyle.ref
 			);
 		} catch (Throwable e) {
 			throw new RuntimeException(e);

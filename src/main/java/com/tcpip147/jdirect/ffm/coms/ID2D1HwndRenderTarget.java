@@ -105,7 +105,8 @@ public class ID2D1HwndRenderTarget extends ComObject {
 			D2D1_POINT_2F point0,
 			D2D1_POINT_2F point1,
 			ID2D1SolidColorBrush brush,
-			float strokeWidth
+			float strokeWidth,
+			ID2D1StrokeStyle strokeStyle
 		) {
 		if (DrawLine == null) {
 			FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(
@@ -119,13 +120,19 @@ public class ID2D1HwndRenderTarget extends ComObject {
 			DrawLine = NativeUtils.LINKER.downcallHandle(findSymbol(15), descriptor);
 		}
 		try {
+			MemorySegment strokeStyleSegment;
+			if (strokeStyle == null) {
+				strokeStyleSegment = MemorySegment.NULL;
+			} else {
+				strokeStyleSegment = strokeStyle.ref.get(ADDRESS, 0);
+			}
 			DrawLine.invokeExact(
 				ref.get(ADDRESS, 0),
 				point0.ref,
 				point1.ref,
 				brush.ref.get(ADDRESS, 0),
 				strokeWidth,
-				MemorySegment.NULL
+				strokeStyleSegment
 			);
 		} catch (Throwable e) {
 			throw new RuntimeException(e);
@@ -137,7 +144,8 @@ public class ID2D1HwndRenderTarget extends ComObject {
 	public void DrawRectangle(
 			D2D1_RECT_F rect,
 			ID2D1SolidColorBrush brush,
-			float strokeWidth
+			float strokeWidth,
+			ID2D1StrokeStyle strokeStyle
 		) {
 		if (DrawRectangle == null) {
 			FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(
@@ -150,12 +158,18 @@ public class ID2D1HwndRenderTarget extends ComObject {
 			DrawRectangle = NativeUtils.LINKER.downcallHandle(findSymbol(16), descriptor);
 		}
 		try {
+			MemorySegment strokeStyleSegment;
+			if (strokeStyle == null) {
+				strokeStyleSegment = MemorySegment.NULL;
+			} else {
+				strokeStyleSegment = strokeStyle.ref.get(ADDRESS, 0);
+			}
 			DrawRectangle.invokeExact(
 				ref.get(ADDRESS, 0),
 				rect.ref,
 				brush.ref.get(ADDRESS, 0),
 				strokeWidth,
-				MemorySegment.NULL
+				strokeStyleSegment
 			);
 		} catch (Throwable e) {
 			throw new RuntimeException(e);
@@ -192,7 +206,8 @@ public class ID2D1HwndRenderTarget extends ComObject {
 	public void DrawRoundedRectangle(
 			D2D1_ROUNDED_RECT roundedRect,
 			ID2D1SolidColorBrush brush,
-			float strokeWidth
+			float strokeWidth,
+			ID2D1StrokeStyle strokeStyle
 		) {
 		if (DrawRoundedRectangle == null) {
 			FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(
@@ -205,12 +220,18 @@ public class ID2D1HwndRenderTarget extends ComObject {
 			DrawRoundedRectangle = NativeUtils.LINKER.downcallHandle(findSymbol(18), descriptor);
 		}
 		try {
+			MemorySegment strokeStyleSegment;
+			if (strokeStyle == null) {
+				strokeStyleSegment = MemorySegment.NULL;
+			} else {
+				strokeStyleSegment = strokeStyle.ref.get(ADDRESS, 0);
+			}
 			DrawRoundedRectangle.invokeExact(
 				ref.get(ADDRESS, 0),
 				roundedRect.ref,
 				brush.ref.get(ADDRESS, 0),
 				strokeWidth,
-				MemorySegment.NULL
+				strokeStyleSegment
 			);
 		} catch (Throwable e) {
 			throw new RuntimeException(e);
@@ -335,6 +356,43 @@ public class ID2D1HwndRenderTarget extends ComObject {
 			return (int) Resize.invokeExact(
 				ref.get(ADDRESS, 0),
 				size.ref
+			);
+		} catch (Throwable e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private static MethodHandle DrawGeometry;
+
+	public void DrawGeometry(
+	        ID2D1PathGeometry geometry,
+	        ID2D1SolidColorBrush brush,
+	        float strokeWidth,
+	        ID2D1StrokeStyle strokeStyle
+		) {
+		if (DrawGeometry == null) {
+			FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(
+				ADDRESS,
+				ADDRESS,
+				ADDRESS,
+				JAVA_FLOAT,
+				ADDRESS
+			);
+			DrawGeometry = NativeUtils.LINKER.downcallHandle(findSymbol(22), descriptor);
+		}
+		try {
+			MemorySegment strokeStyleSegment;
+			if (strokeStyle == null) {
+				strokeStyleSegment = MemorySegment.NULL;
+			} else {
+				strokeStyleSegment = strokeStyle.ref.get(ADDRESS, 0);
+			}
+			DrawGeometry.invokeExact(
+				ref.get(ADDRESS, 0),
+				geometry.ref.get(ADDRESS, 0),
+				brush.ref.get(ADDRESS, 0),
+				strokeWidth,
+				strokeStyleSegment
 			);
 		} catch (Throwable e) {
 			throw new RuntimeException(e);

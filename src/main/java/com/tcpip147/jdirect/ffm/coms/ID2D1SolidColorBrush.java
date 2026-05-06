@@ -20,18 +20,18 @@ public class ID2D1SolidColorBrush extends ComObject {
 		super(arena);
 	}
 
-	private static MethodHandle setColor;
+	private static MethodHandle SetColor;
 
-	public void setColor(D2D1_COLOR_F color) {
-		if (setColor == null) {
+	public void SetColor(D2D1_COLOR_F color) {
+		if (SetColor == null) {
 			FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(
 				ADDRESS,
 				ADDRESS
 			);
-			setColor = NativeUtils.LINKER.downcallHandle(findSymbol(8), descriptor);
+			SetColor = NativeUtils.LINKER.downcallHandle(findSymbol(8), descriptor);
 		}
 		try {
-			setColor.invokeExact(
+			SetColor.invokeExact(
 				ref.get(ADDRESS, 0),
 				color.ref
 			);
